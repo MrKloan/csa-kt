@@ -1,10 +1,10 @@
 package io.fries.csa.core.journey
 
 import io.fries.csa.core.timetable.Stop
-import java.time.ZonedDateTime
+import io.fries.csa.core.timetable.Timestamp
 
 data class JourneyQuery(
     val departure: Stop,
     val arrival: Stop,
-    val departureTime: ZonedDateTime
+    val departureTime: Timestamp
 )
