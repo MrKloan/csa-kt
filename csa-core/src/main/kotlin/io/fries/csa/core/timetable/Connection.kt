@@ -7,4 +7,7 @@ data class Connection(
     val departureTime: ZonedDateTime,
     val arrivalStop: Stop,
     val arrivalTime: ZonedDateTime
-)
+) {
+    val departureTimestamp = departureTime.toEpochSecond()
+    val arrivalTimestamp = arrivalTime.toEpochSecond()
+}

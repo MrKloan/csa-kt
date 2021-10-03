@@ -4,8 +4,6 @@ import io.fries.csa.core.journey.JourneyQuery
 import io.fries.csa.core.timetable.Connection
 import io.fries.csa.core.timetable.Connections
 import io.fries.csa.core.timetable.Stop
-import java.time.Instant
-import java.time.ZonedDateTime
 
 class EarliestArrival(private val connections: Connections) : CSA {
 
@@ -17,22 +15,22 @@ class EarliestArrival(private val connections: Connections) : CSA {
     private fun findReachableConnections(query: JourneyQuery): Map<Stop, Connection> {
         val reachableConnections = mutableMapOf<Stop, Connection>()
 
-        var earliestArrival = ZonedDateTime.parse(Instant.ofEpochMilli(Long.MAX_VALUE).toString())
+        var earliestArrival = Long.MAX_VALUE
         val earliestArrivalByStop = mutableMapOf(
-            query.departure to query.departureTime
+            query.departure to query.departureTime.toEpochSecond()
         )
 
         for (connection in connections) {
             if (isReachableMoreQuickly(connection, earliestArrivalByStop)) {
-                earliestArrivalByStop[connection.arrivalStop] = connection.arrivalTime
+                earliestArrivalByStop[connection.arrivalStop] = connection.arrivalTimestamp
                 reachableConnections[connection.arrivalStop] = connection
 
                 if (connection.arrivalStop == query.arrival) {
                     earliestArrival =
-                        if (earliestArrival.isBefore(connection.arrivalTime)) earliestArrival
-                        else connection.arrivalTime
+                        if (earliestArrival < connection.arrivalTimestamp) earliestArrival
+                        else connection.arrivalTimestamp
                 }
-            } else if (connection.arrivalTime.isAfter(earliestArrival)) {
+            } else if (connection.arrivalTimestamp > earliestArrival) {
                 break
             }
         }
@@ -40,16 +38,19 @@ class EarliestArrival(private val connections: Connections) : CSA {
         return reachableConnections
     }
 
-    private fun isReachableMoreQuickly(connection: Connection, earliestArrivalByStop: MutableMap<Stop, ZonedDateTime>) =
+    private fun isReachableMoreQuickly(connection: Connection, earliestArrivalByStop: MutableMap<Stop, Long>) =
         isDepartureStopReachableBeforeConnectionDeparture(connection, earliestArrivalByStop)
             && isConnectionArrivalBeforeEarliestStopArrival(earliestArrivalByStop, connection)
 
-    private fun isDepartureStopReachableBeforeConnectionDeparture(connection: Connection, earliestArrivalByStop: MutableMap<Stop, ZonedDateTime>) =
-        earliestArrivalByStop[connection.departureStop]?.isBefore(connection.departureTime) == true
-            || earliestArrivalByStop[connection.departureStop]?.isEqual(connection.departureTime) == true
+    private fun isDepartureStopReachableBeforeConnectionDeparture(connection: Connection, earliestArrivalByStop: MutableMap<Stop, Long>): Boolean =
+        earliestArrivalByStop[connection.departureStop]
+            ?.let { it <= connection.departureTimestamp }
+            ?: false
 
-    private fun isConnectionArrivalBeforeEarliestStopArrival(earliestArrivalByStop: MutableMap<Stop, ZonedDateTime>, connection: Connection) =
-        earliestArrivalByStop[connection.arrivalStop]?.isAfter(connection.arrivalTime) ?: true
+    private fun isConnectionArrivalBeforeEarliestStopArrival(earliestArrivalByStop: MutableMap<Stop, Long>, connection: Connection) =
+        earliestArrivalByStop[connection.arrivalStop]
+            ?.let { it > connection.arrivalTimestamp }
+            ?: true
 
     private fun createEarliestArrivalJourney(query: JourneyQuery, reachableConnections: Map<Stop, Connection>): Connections {
         val route = mutableListOf<Connection>()

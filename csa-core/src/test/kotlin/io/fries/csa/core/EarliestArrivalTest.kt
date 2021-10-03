@@ -110,7 +110,7 @@ internal open class EarliestArrivalTest {
         }
 
         @Test
-        @Benchmark(threshold = 150)
+        @Benchmark(threshold = 50)
         internal fun should_compute_earliest_arrival_journey() {
             val query = JourneyQuery(
                 departure = Stop(19930),
