@@ -1,10 +1,11 @@
 package io.fries.csa.core.timetable
 
-data class Connections(val connections: List<Connection> = listOf()) : List<Connection> by connections {
+import io.fries.csa.core.journey.JourneyQuery
 
-    init {
-        require(connections == connections.sortedBy { it.departureTime }) {
-            "connections should be sorted by departure time"
-        }
-    }
+data class Connections(private val connections: List<Connection> = listOf()) : List<Connection> by connections {
+
+    fun departingFor(query: JourneyQuery): Connections = Connections(connections.subList(
+        connections.indexOfFirst { it.departureTimestamp >= query.departureTime.toEpochSecond() },
+        connections.size
+    ))
 }

@@ -20,7 +20,7 @@ class EarliestArrival(private val connections: Connections) : CSA {
             query.departure to query.departureTime.toEpochSecond()
         )
 
-        for (connection in connections) {
+        for (connection in connections.departingFor(query)) {
             if (isReachableMoreQuickly(connection, earliestArrivalByStop)) {
                 earliestArrivalByStop[connection.arrivalStop] = connection.arrivalTimestamp
                 reachableConnections[connection.arrivalStop] = connection
